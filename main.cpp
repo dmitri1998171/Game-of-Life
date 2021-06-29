@@ -1,7 +1,13 @@
 #include <iostream>
 #include <windows.h>
+#include <SFML/System.hpp>
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
+
+#define WINDOW_SIZE 402
 
 using namespace std;
+using namespace sf;
 
 const int galaxySize = 25;
 char currGen[galaxySize][galaxySize] = {
@@ -129,8 +135,42 @@ class CellClass {
 };
 
 int main(int argc, char* argv[]) {
-    CellClass cell;
-    cell.run();
+    RenderWindow window(VideoMode(WINDOW_SIZE, WINDOW_SIZE), "Game of Life");
+
+    const int gridStep = 10;
+    int rectSize = WINDOW_SIZE / gridStep;
+    RectangleShape cell[gridStep][gridStep];
+    
+    for(int i = 0; i < gridStep; i++) {
+        for(int j = 0; j < gridStep; j++) {
+            cell[i][j].setSize(Vector2f(rectSize, rectSize));
+            cell[i][j].setFillColor(Color::White);
+            cell[i][j].setOutlineThickness(1);
+            cell[i][j].setOutlineColor(Color::Red);
+            cell[i][j].setPosition((i * rectSize) + 1, (j * rectSize) + 1);
+        }
+    }
+
+    while (window.isOpen()) {
+        Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) {
+                window.close();
+                return 0;
+            }
+        }
+
+        window.clear();
+
+        for(int i = 0; i < gridStep; i++) 
+            for(int j = 0; j < gridStep; j++) 
+                window.draw(cell[i][j]);
+
+        window.display();
+    }
+    
+    // CellClass cell;
+    // cell.run();
 
     getchar();
     return 0;
