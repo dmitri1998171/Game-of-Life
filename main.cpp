@@ -9,61 +9,105 @@
 using namespace std;
 using namespace sf;
 
-const int galaxySize = 25;
-char currGen[galaxySize][galaxySize] = {
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "           *            ",
-    "          **            ",
-    "    ********            ",
-    "       ********         ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-    "                        ",
-};
+// char currGen[gridStep][gridStep] = {
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "           *            ",
+//     "          **            ",
+//     "    ********            ",
+//     "       ********         ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+//     "                        ",
+// };
 
 class CellClass {
     private: 
-        char prevGen[galaxySize][galaxySize];
         int neighborsCount = 0;
-
+        int playState = 0;
+        static const int gridStep = 25;
+        char prevGen[gridStep][gridStep];
+        char currGen[gridStep][gridStep];
+        int rectSize = WINDOW_SIZE / gridStep;
+        RectangleShape cell[gridStep][gridStep];
+        Color liveCellColor = Color::Red;
+        Color deathCellColor = Color::White;
+        
     public:
-        void nextGen() {
-            for(int i = 0; i < galaxySize; i++) 
-                for(int j = 0; j < galaxySize; j++) 
-                    prevGen[i][j] = currGen[i][j];
+    // ==== SFML methods =============================
+       
+        void drawGrid() {
+            for(int i = 0; i < gridStep; i++) {
+                for(int j = 0; j < gridStep; j++) {
+                    cell[i][j].setSize(Vector2f(rectSize, rectSize));
+                    cell[i][j].setFillColor(deathCellColor);
+                    cell[i][j].setOutlineThickness(1);
+                    cell[i][j].setOutlineColor(Color::Black);
+                    cell[i][j].setPosition((i * rectSize) + 1, (j * rectSize) + 1);
+                }
+            }
         }
 
-        void drawCells() {
-            for(int i = 0; i < galaxySize; i++) {
-                for(int j = 0; j < galaxySize; j++) {
-                    cout << currGen[i][j];
+        void drawFirstGen(RenderWindow* window) {
+            if(Mouse::isButtonPressed(Mouse::Left)) {
+                if(!playState) {
+                    Vector2i mousePos = Mouse::getPosition(*window);
+
+                    for(int i = 0; i < gridStep; i++) 
+                        for(int j = 0; j < gridStep; j++) 
+                            if(cell[i][j].getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                                cout << "click on cell[" << i << "][" << j << "]" << endl;
+                                currGen[i][j] = '*';
+                                cell[i][j].setFillColor(liveCellColor);
+                            }
                 }
-                cout << endl;
             }
-            cout << endl;
-            Sleep(1000);
+        }
+
+    // ==== Logic methods ============================
+
+        void cleanCurrGen() {
+            for(int i = 0; i < gridStep; i++) 
+                for(int j = 0; j < gridStep; j++)
+                    currGen[i][j] = ' ';
+        }
+
+        void nextGen() {
+            int counter = 0;
+
+            for(int i = 0; i < gridStep; i++) {
+                for(int j = 0; j < gridStep; j++) 
+                    prevGen[i][j] = currGen[i][j];
+             
+                // if(strcmp(currGen[i], prevGen[i])) 
+                //     counter++;
+            }
+
+            // if(counter == gridStep) {
+            //     cout << "\ncheckEndGame()\n\n";
+            //     playState = 0;
+            // }
         }
 
         void changeCellState() {
-            for(int i = 0; i < galaxySize; i++) {
-                for(int j = 0; j < galaxySize; j++) {
+            for(int i = 0; i < gridStep; i++) {
+                for(int j = 0; j < gridStep; j++) {
                     if(prevGen[i][j] == '*') {
                         if(prevGen[i][j - 1] == '*') neighborsCount++; 
                         if(prevGen[i][j + 1] == '*') neighborsCount++;
@@ -74,8 +118,10 @@ class CellClass {
                         if(prevGen[i - 1][j + 1] == '*') neighborsCount++;
                         if(prevGen[i - 1][j - 1] == '*') neighborsCount++;
 
-                        if(neighborsCount < 2 || neighborsCount > 3) 
+                        if(neighborsCount < 2 || neighborsCount > 3) {
                             currGen[i][j] = ' ';
+                            cell[i][j].setFillColor(deathCellColor);
+                        }
                         
                         neighborsCount = 0;
                     }
@@ -89,8 +135,10 @@ class CellClass {
                         if(prevGen[i - 1][j + 1] == '*') neighborsCount++;
                         if(prevGen[i - 1][j - 1] == '*') neighborsCount++;
 
-                        if(neighborsCount == 3) 
+                        if(neighborsCount == 3) {
                             currGen[i][j] = '*';
+                            cell[i][j].setFillColor(liveCellColor);
+                        }
 
                         neighborsCount = 0;
                     }
@@ -98,38 +146,68 @@ class CellClass {
             }
         }
 
-        int checkEndGame() {
-            int endGameState = 0;
-            int checker = 0;
+        void checkEndGame() {
+            int counter = 0;
             
-            for(int i = 0; i < galaxySize; i++) {
-                for(int j = 0; j < galaxySize; j++) {
-                    if(currGen[i][j] = prevGen[i][j]) {
-                        checker++;
+            for(int i = 0; i < gridStep; i++) {
+                for(int j = 0; j < gridStep; j++) {
+                    if(strcmp(currGen[i], prevGen[i])) {
+                        counter++;
                     }
                 }
             }
 
-            if(checker == galaxySize * galaxySize)
-                endGameState = 0;
-            else
-                endGameState = 1;
-
-            return endGameState;
+            if(counter == gridStep) {
+                cout << "\ncheckEndGame()\n\n";
+                playState = 0;
+            }
         }
 
-        void run() {
+        void run(RenderWindow* window) {
             bool cycle = true;
+            int pauseCount = 0;
+
+            Font font;
+            Text text;
+            String str = "You win!";
+            font.loadFromFile("./CyrilicOld.TTF");
+
+            text.setFont(font);
+            text.setFillColor(Color::Green);
+            text.setString(str);
+            // text.setPosition((WINDOW_SIZE - str.getSize()) / 2, WINDOW_SIZE / 2);
 
             while(cycle) {
-                nextGen();
-                changeCellState();
-                drawCells();
+                Event event;
+                while (window->pollEvent(event)) {
+                    if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) {
+                        window->close();
+                        exit(0);
+                    }
 
-                // if(checkEndGame() == 1) {
-                //     cout << "\n\n\t\t\t\t\tcheckEndGame()\n\n";
-                //     cycle = false;
-                // }
+                    if (event.type == sf::Event::KeyPressed) {
+                        if (event.key.code == sf::Keyboard::Enter) playState = 1;
+                        if (event.key.code == sf::Keyboard::Space) playState = 0;
+                    }
+                }
+                
+                drawFirstGen(window);
+
+                if(playState) {
+                    nextGen();
+                    changeCellState();
+                }
+
+                // checkEndGame();
+                    
+                window->clear();
+
+                for(int i = 0; i < gridStep; i++) 
+                    for(int j = 0; j < gridStep; j++) 
+                        window->draw(cell[i][j]);
+
+                // window->draw(text);
+                window->display();
             }
         }
 };
@@ -137,41 +215,11 @@ class CellClass {
 int main(int argc, char* argv[]) {
     RenderWindow window(VideoMode(WINDOW_SIZE, WINDOW_SIZE), "Game of Life");
 
-    const int gridStep = 10;
-    int rectSize = WINDOW_SIZE / gridStep;
-    RectangleShape cell[gridStep][gridStep];
+    CellClass cell;
+    cell.cleanCurrGen();
+    cell.drawGrid();
+    cell.run(&window);
     
-    for(int i = 0; i < gridStep; i++) {
-        for(int j = 0; j < gridStep; j++) {
-            cell[i][j].setSize(Vector2f(rectSize, rectSize));
-            cell[i][j].setFillColor(Color::White);
-            cell[i][j].setOutlineThickness(1);
-            cell[i][j].setOutlineColor(Color::Red);
-            cell[i][j].setPosition((i * rectSize) + 1, (j * rectSize) + 1);
-        }
-    }
-
-    while (window.isOpen()) {
-        Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) {
-                window.close();
-                return 0;
-            }
-        }
-
-        window.clear();
-
-        for(int i = 0; i < gridStep; i++) 
-            for(int j = 0; j < gridStep; j++) 
-                window.draw(cell[i][j]);
-
-        window.display();
-    }
-    
-    // CellClass cell;
-    // cell.run();
-
     getchar();
     return 0;
 }
