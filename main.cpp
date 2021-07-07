@@ -6,14 +6,6 @@
 
 #define WINDOW_SIZE 402
 
-enum GAME_STATES {
-    START_STATE = 0,
-    PAUSE_STATE = 1,
-    PLAY_STATE,
-    WIN_STATE,
-    FAIL_STATE
-};
-
 using namespace std;
 using namespace sf;
 
@@ -48,11 +40,10 @@ using namespace sf;
 class CellClass {
     private: 
         int neighborsCount = 0;
-        int playState = START_STATE;
+        int playState = 0;
         static const int gridStep = 25;
         char prevGen[gridStep][gridStep];
         char currGen[gridStep][gridStep];
-        char preprevGen[gridStep][gridStep];
         int rectSize = WINDOW_SIZE / gridStep;
         RectangleShape cell[gridStep][gridStep];
         Color liveCellColor = Color::Red;
@@ -75,12 +66,13 @@ class CellClass {
 
         void drawFirstGen(RenderWindow* window) {
             if(Mouse::isButtonPressed(Mouse::Left)) {
-                if(playState == START_STATE) {
+                if(!playState) {
                     Vector2i mousePos = Mouse::getPosition(*window);
 
                     for(int i = 0; i < gridStep; i++) 
                         for(int j = 0; j < gridStep; j++) 
                             if(cell[i][j].getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                                cout << "click on cell[" << i << "][" << j << "]" << endl;
                                 currGen[i][j] = '*';
                                 cell[i][j].setFillColor(liveCellColor);
                             }
@@ -92,20 +84,16 @@ class CellClass {
 
         void cleanCurrGen() {
             for(int i = 0; i < gridStep; i++) 
-                for(int j = 0; j < gridStep; j++) {
+                for(int j = 0; j < gridStep; j++)
                     currGen[i][j] = ' ';
-                    cell[i][j].setFillColor(Color::White);
-                }
         }
 
         void nextGen() {
             int counter = 0;
 
             for(int i = 0; i < gridStep; i++) {
-                for(int j = 0; j < gridStep; j++) {
-                    preprevGen[i][j] = prevGen[i][j];
+                for(int j = 0; j < gridStep; j++) 
                     prevGen[i][j] = currGen[i][j];
-                }
              
                 // if(strcmp(currGen[i], prevGen[i])) 
                 //     counter++;
@@ -159,40 +147,44 @@ class CellClass {
         }
 
         void checkEndGame() {
-            // int counter = 0;
+            int counter = 0;
             
             for(int i = 0; i < gridStep; i++) {
                 for(int j = 0; j < gridStep; j++) {
+<<<<<<< HEAD
                     // if(strcmp(currGen[i], prevGen[i])) {
                     //     counter++;
                     // }
                     if(currGen[i][j] == prevGen[i][j]) 
                         if(prevGen[i][j] == preprevGen[i][j])
                             playState = FAIL_STATE;
+=======
+                    if(strcmp(currGen[i], prevGen[i])) {
+                        counter++;
+                    }
+>>>>>>> parent of 92f66a5 (add game states, restart game)
                 }
             }
 
-            // if(counter == gridStep) {
-            //     cout << "\ncheckEndGame()\n\n";
-            //     playState = 0;
-            // }
+            if(counter == gridStep) {
+                cout << "\ncheckEndGame()\n\n";
+                playState = 0;
+            }
         }
 
         void run(RenderWindow* window) {
             bool cycle = true;
-            int startCount = 0;
+            int pauseCount = 0;
 
             Font font;
             Text text;
-            int fontSize = 24;
             String str = "You win!";
             font.loadFromFile("./CyrilicOld.TTF");
 
             text.setFont(font);
             text.setFillColor(Color::Green);
             text.setString(str);
-            text.setCharacterSize(fontSize);
-            text.setPosition((WINDOW_SIZE - (str.getSize() * (fontSize / 2))) / 2, (WINDOW_SIZE - (fontSize * 2)) / 2);
+            // text.setPosition((WINDOW_SIZE - str.getSize()) / 2, WINDOW_SIZE / 2);
 
             while(cycle) {
                 Event event;
@@ -203,19 +195,14 @@ class CellClass {
                     }
 
                     if (event.type == sf::Event::KeyPressed) {
-                        if (event.key.code == sf::Keyboard::C) {
-                            if(playState == PLAY_STATE || playState == PAUSE_STATE) {
-                                playState = START_STATE;
-                                startCount = 0;
-                            }
-                        }
-                        if (event.key.code == sf::Keyboard::Enter) playState = PLAY_STATE;
-                        if (event.key.code == sf::Keyboard::Space) playState = PAUSE_STATE;
+                        if (event.key.code == sf::Keyboard::Enter) playState = 1;
+                        if (event.key.code == sf::Keyboard::Space) playState = 0;
                     }
                 }
 
                 window->clear();
                 
+<<<<<<< HEAD
                 switch(playState) {
                     case START_STATE:
                         str.clear();
@@ -245,14 +232,31 @@ class CellClass {
 
                         window->draw(text);
                         break;
+=======
+                drawFirstGen(window);
+
+                if(playState) {
+                    nextGen();
+                    changeCellState();
+>>>>>>> parent of 92f66a5 (add game states, restart game)
                 }
-                    
+
                 // checkEndGame();
+<<<<<<< HEAD
+=======
+                    
+                window->clear();
+>>>>>>> parent of 92f66a5 (add game states, restart game)
 
                 for(int i = 0; i < gridStep; i++) 
                     for(int j = 0; j < gridStep; j++) 
                         window->draw(cell[i][j]);
+<<<<<<< HEAD
                 
+=======
+
+                // window->draw(text);
+>>>>>>> parent of 92f66a5 (add game states, restart game)
                 window->display();
             }
         }
