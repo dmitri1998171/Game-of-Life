@@ -6,6 +6,14 @@
 
 #define WINDOW_SIZE 402
 
+enum GAME_STATES {
+    START_STATE = 0,
+    PAUSE_STATE = 1,
+    PLAY_STATE,
+    WIN_STATE,
+    FAIL_STATE
+};
+
 using namespace std;
 using namespace sf;
 
@@ -40,10 +48,11 @@ using namespace sf;
 class CellClass {
     private: 
         int neighborsCount = 0;
-        int playState = 0;
+        int playState = START_STATE;
         static const int gridStep = 25;
         char prevGen[gridStep][gridStep];
         char currGen[gridStep][gridStep];
+        char preprevGen[gridStep][gridStep];
         int rectSize = WINDOW_SIZE / gridStep;
         RectangleShape cell[gridStep][gridStep];
         Color liveCellColor = Color::Red;
@@ -66,13 +75,12 @@ class CellClass {
 
         void drawFirstGen(RenderWindow* window) {
             if(Mouse::isButtonPressed(Mouse::Left)) {
-                if(!playState) {
+                if(playState == START_STATE) {
                     Vector2i mousePos = Mouse::getPosition(*window);
 
                     for(int i = 0; i < gridStep; i++) 
                         for(int j = 0; j < gridStep; j++) 
                             if(cell[i][j].getGlobalBounds().contains(mousePos.x, mousePos.y)) {
-                                cout << "click on cell[" << i << "][" << j << "]" << endl;
                                 currGen[i][j] = '*';
                                 cell[i][j].setFillColor(liveCellColor);
                             }
@@ -84,16 +92,20 @@ class CellClass {
 
         void cleanCurrGen() {
             for(int i = 0; i < gridStep; i++) 
-                for(int j = 0; j < gridStep; j++)
+                for(int j = 0; j < gridStep; j++) {
                     currGen[i][j] = ' ';
+                    cell[i][j].setFillColor(Color::White);
+                }
         }
 
         void nextGen() {
             int counter = 0;
 
             for(int i = 0; i < gridStep; i++) {
-                for(int j = 0; j < gridStep; j++) 
+                for(int j = 0; j < gridStep; j++) {
+                    preprevGen[i][j] = prevGen[i][j];
                     prevGen[i][j] = currGen[i][j];
+                }
              
                 // if(strcmp(currGen[i], prevGen[i])) 
                 //     counter++;
@@ -147,35 +159,40 @@ class CellClass {
         }
 
         void checkEndGame() {
-            int counter = 0;
+            // int counter = 0;
             
             for(int i = 0; i < gridStep; i++) {
                 for(int j = 0; j < gridStep; j++) {
-                    if(strcmp(currGen[i], prevGen[i])) {
-                        counter++;
-                    }
+                    // if(strcmp(currGen[i], prevGen[i])) {
+                    //     counter++;
+                    // }
+                    if(prevGen[i][j] == currGen[i][j]) 
+                        if(prevGen[i][j] == preprevGen[i][j])
+                            playState = FAIL_STATE;
                 }
             }
 
-            if(counter == gridStep) {
-                cout << "\ncheckEndGame()\n\n";
-                playState = 0;
-            }
+            // if(counter == gridStep) {
+            //     cout << "\ncheckEndGame()\n\n";
+            //     playState = 0;
+            // }
         }
 
         void run(RenderWindow* window) {
             bool cycle = true;
-            int pauseCount = 0;
+            int startCount = 0;
 
             Font font;
             Text text;
+            int fontSize = 24;
             String str = "You win!";
             font.loadFromFile("./CyrilicOld.TTF");
 
             text.setFont(font);
             text.setFillColor(Color::Green);
             text.setString(str);
-            // text.setPosition((WINDOW_SIZE - str.getSize()) / 2, WINDOW_SIZE / 2);
+            text.setCharacterSize(fontSize);
+            text.setPosition((WINDOW_SIZE - (str.getSize() * (fontSize / 2))) / 2, (WINDOW_SIZE - (fontSize * 2)) / 2);
 
             while(cycle) {
                 Event event;
@@ -186,27 +203,55 @@ class CellClass {
                     }
 
                     if (event.type == sf::Event::KeyPressed) {
-                        if (event.key.code == sf::Keyboard::Enter) playState = 1;
-                        if (event.key.code == sf::Keyboard::Space) playState = 0;
+                        if (event.key.code == sf::Keyboard::C) {
+                            if(playState == PLAY_STATE || playState == PAUSE_STATE) {
+                                playState = START_STATE;
+                                startCount = 0;
+                            }
+                        }
+                        if (event.key.code == sf::Keyboard::Enter) playState = PLAY_STATE;
+                        if (event.key.code == sf::Keyboard::Space) playState = PAUSE_STATE;
                     }
                 }
                 
-                drawFirstGen(window);
+                if(playState == START_STATE) {
+                    str.clear();
+                    str.insert(0, "You win!");
 
-                if(playState) {
-                    nextGen();
-                    changeCellState();
+                    if(startCount == 0) {
+                        cleanCurrGen();
+                        startCount++;
+                    }
+
+                    drawFirstGen(window);
                 }
 
-                // checkEndGame();
+                if(playState == PLAY_STATE) {
+                    nextGen();
+                    changeCellState();
+                    Sleep(750);
+                }
                     
+                // checkEndGame();
+                
                 window->clear();
 
                 for(int i = 0; i < gridStep; i++) 
                     for(int j = 0; j < gridStep; j++) 
                         window->draw(cell[i][j]);
 
-                // window->draw(text);
+                if(playState == WIN_STATE) {
+                    window->draw(text);
+                }
+
+                if(playState == FAIL_STATE) {
+                    // text.setString("Game over!");
+                    str.clear();
+                    str.insert(0, "Game over!");
+
+                    window->draw(text);
+                }
+                
                 window->display();
             }
         }
