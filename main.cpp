@@ -166,7 +166,7 @@ class CellClass {
                     // if(strcmp(currGen[i], prevGen[i])) {
                     //     counter++;
                     // }
-                    if(prevGen[i][j] == currGen[i][j]) 
+                    if(currGen[i][j] == prevGen[i][j]) 
                         if(prevGen[i][j] == preprevGen[i][j])
                             playState = FAIL_STATE;
                 }
@@ -213,44 +213,45 @@ class CellClass {
                         if (event.key.code == sf::Keyboard::Space) playState = PAUSE_STATE;
                     }
                 }
+
+                window->clear();
                 
-                if(playState == START_STATE) {
-                    str.clear();
-                    str.insert(0, "You win!");
+                switch(playState) {
+                    case START_STATE:
+                        str.clear();
+                        str.insert(0, "You win!");
 
-                    if(startCount == 0) {
-                        cleanCurrGen();
-                        startCount++;
-                    }
+                        if(startCount == 0) {
+                            cleanCurrGen();
+                            startCount++;
+                        }
 
-                    drawFirstGen(window);
-                }
+                        drawFirstGen(window);
+                        break;
 
-                if(playState == PLAY_STATE) {
-                    nextGen();
-                    changeCellState();
-                    Sleep(750);
+                    case PLAY_STATE:
+                        nextGen();
+                        changeCellState();
+                        Sleep(750);
+                        break;
+
+                    case WIN_STATE:
+                        window->draw(text);
+                        break;
+
+                    case FAIL_STATE:
+                        str.clear();
+                        str.insert(0, "Game over!");
+
+                        window->draw(text);
+                        break;
                 }
                     
                 // checkEndGame();
-                
-                window->clear();
 
                 for(int i = 0; i < gridStep; i++) 
                     for(int j = 0; j < gridStep; j++) 
                         window->draw(cell[i][j]);
-
-                if(playState == WIN_STATE) {
-                    window->draw(text);
-                }
-
-                if(playState == FAIL_STATE) {
-                    // text.setString("Game over!");
-                    str.clear();
-                    str.insert(0, "Game over!");
-
-                    window->draw(text);
-                }
                 
                 window->display();
             }
