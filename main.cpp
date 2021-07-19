@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -6,7 +8,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 
-#define WINDOW_SIZE 402
+#define WINDOW_SIZE 800
 
 enum GAME_STATES {
     START_STATE = 0,
@@ -23,11 +25,11 @@ class CellClass {
     private: 
         int neighborsCount = 0;
         int playState = START_STATE;
-        static const int gridStep = 25;
+        static const int rectSize = 16;
+        static const int gridStep = WINDOW_SIZE / rectSize;
         char prevGen[gridStep][gridStep];
         char currGen[gridStep][gridStep];
         char preprevGen[gridStep][gridStep];
-        int rectSize = WINDOW_SIZE / gridStep;
         RectangleShape cell[gridStep][gridStep];
         Color liveCellColor = Color::Red;
         Color deathCellColor = Color::White;
@@ -38,7 +40,7 @@ class CellClass {
 
     // ==== SFML methods =============================
        
-        void drawGrid() {
+        void CreateGrid() {
             for(int i = 0; i < gridStep; i++) {
                 for(int j = 0; j < gridStep; j++) {
                     cell[i][j].setSize(Vector2f(rectSize, rectSize));
@@ -65,6 +67,12 @@ class CellClass {
             }
         }
 
+        void addText(Text *text, Font *font, string *str, Color color) {
+            text->setFont(*font);
+            text->setFillColor(color);
+            text->setString(*str);
+        }
+
     // ==== Logic methods ============================
 
         void cleanCurrGen() {
@@ -76,22 +84,12 @@ class CellClass {
         }
 
         void nextGen() {
-            int counter = 0;
-
             for(int i = 0; i < gridStep; i++) {
                 for(int j = 0; j < gridStep; j++) {
                     preprevGen[i][j] = prevGen[i][j];
                     prevGen[i][j] = currGen[i][j];
                 }
-             
-                // if(strcmp(currGen[i], prevGen[i])) 
-                //     counter++;
             }
-
-            // if(counter == gridStep) {
-            //     cout << "\ncheckEndGame()\n\n";
-            //     playState = 0;
-            // }
         }
 
         void changeCellState() {
@@ -135,96 +133,57 @@ class CellClass {
             }
         }
 
-        void checkEndGame() {
-            // int counter = 0;
-            
-            for(int i = 0; i < gridStep; i++) {
-                for(int j = 0; j < gridStep; j++) {
-                    // if(strcmp(currGen[i], prevGen[i])) {
-                    //     counter++;
-                    // }
-                    if(currGen[i][j] == prevGen[i][j]) 
-                        if(prevGen[i][j] == preprevGen[i][j])
-                            playState = FAIL_STATE;
-                }
-            }
-
-            // if(counter == gridStep) {
-            //     cout << "\ncheckEndGame()\n\n";
-            //     playState = 0;
-            // }
-        }
-
     // ===============================================
 
-        int timer(int seconds) {
+        int timer(float seconds) {
             Time elapsed1;
 
             elapsed1 = clock.getElapsedTime();
-            if(elapsed1.asSeconds() > 10.0) 
+            if(elapsed1.asSeconds() > seconds) 
                 return 1;
 
             return 0;
         }
 
-        void loadTextFromFile(char *path, char array[]) { 
-            char tmp[255];
-            FILE *file = fopen(path, "r");
+        void loadTextFromFile(char *path, string *array) { 
+            string line;
+ 
+            ifstream file(path);
+            if (file.is_open()) {
+                while (getline(file, line)) {
+                    array->append(line);
+                    array->append("\n");
+                }
+            }
 
-            while (fgets(tmp, 255, file) != NULL)
-                strcat(array, tmp);
-                // array.insert(array.length(), tmp);
-                // array.push_back(*tmp);
-
-            fclose(file);
+            file.close(); 
         }
 
-        // void loadTextFromFile(char *path, string array) { 
-        //     char tmp[255];
-        //     FILE *file = fopen(path, "r");
-        //     while (fgets(tmp, 255, file) != NULL)
-        //         // strcat(array, tmp);
-        //         // array.insert(array.length(), tmp);
-        //         // array.push_back(*tmp);
-        //     fclose(file);
-        // }
+        void drawGrid(RenderWindow *window) {
+            for(int i = 0; i < gridStep; i++) 
+                for(int j = 0; j < gridStep; j++) 
+                    window->draw(cell[i][j]);
+        }
 
         void run(RenderWindow* window) {
-            bool cycle = true;
             int startCount = 0;
-            int infoTextState = 1, rulesTextState = 0;
             int fontSize = 24;
-            // string rulesText;
-            // string infoText;
-            char infoText[55];
-            char rulesText[2715];
+            int textColor = 75;
+            int infoTextState = 1, rulesTextState = 0;
+            string rulesText;
+            string infoText;
 
+            Text info_text, rules_text;
             Font font;
-            Text text, info_text, rules_text;
-            String str = "You win!";
             font.loadFromFile("./CyrilicOld.TTF");
 
-            text.setFont(font);
-            text.setFillColor(Color::Green);
-            text.setString(str);
-            text.setCharacterSize(fontSize);
-            text.setPosition((WINDOW_SIZE - (str.getSize() * (fontSize / 2))) / 2, (WINDOW_SIZE - (fontSize * 2)) / 2);
+            loadTextFromFile("info.txt", &infoText);
+            loadTextFromFile("rules.txt", &rulesText);
 
-            // setlocale(LC_ALL, "Rus");
-            loadTextFromFile("info.txt", infoText);
-            loadTextFromFile("rules.txt", rulesText);
+            addText(&info_text, &font, &infoText, Color(textColor, textColor, textColor));
+            addText(&rules_text, &font, &rulesText, Color(textColor, textColor, textColor));
 
-            int tc = 75;
-            info_text.setFont(font);
-            info_text.setFillColor(Color(tc, tc, tc));
-            info_text.setString(infoText);
-
-            rules_text.setFont(font);
-            rules_text.setFillColor(Color(tc, tc, tc));
-            // rules_text.setString(String::fromUtf8(rulesText[0], rulesText[strlen(rulesText)]));
-            rules_text.setString(rulesText);
-
-            while(cycle) {
+            while(true) {
                 Event event;
                 while (window->pollEvent(event)) {
                     if (event.type == Event::Closed || Keyboard::isKeyPressed(Keyboard::Escape)) {
@@ -252,17 +211,31 @@ class CellClass {
 
                 window->clear();
                 
+                drawGrid(window);
+
                 switch(playState) {
                     case START_STATE:
-                        str.clear();
-                        str.insert(0, "You win!");
-
                         if(startCount == 0) {
                             cleanCurrGen();
                             startCount++;
                         }
 
                         drawFirstGen(window);
+                        
+                    case PAUSE_STATE:
+                        if(infoTextState) {
+                            window->draw(info_text);
+
+                            if(timer(5))
+                                infoTextState = 0;
+                        }
+
+                        if(rulesTextState) {
+                            window->draw(rules_text);
+
+                            if(timer(10))
+                                rulesTextState = 0;
+                        }
                         break;
 
                     case PLAY_STATE:
@@ -270,39 +243,8 @@ class CellClass {
                         changeCellState();
                         Sleep(750);
                         break;
-
-                    case WIN_STATE:
-                        window->draw(text);
-                        break;
-
-                    case FAIL_STATE:
-                        str.clear();
-                        str.insert(0, "Game over!");
-
-                        window->draw(text);
-                        break;
                 }
-                    
-                // checkEndGame();
-
-                for(int i = 0; i < gridStep; i++) 
-                    for(int j = 0; j < gridStep; j++) 
-                        window->draw(cell[i][j]);
-
-                if(infoTextState) {
-                    window->draw(info_text);
-
-                    if(timer(5))
-                        infoTextState = 0;
-                }
-
-                if(rulesTextState) {
-                    window->draw(rules_text);
-
-                    if(timer(10))
-                        rulesTextState = 0;
-                }
-                
+                                
                 window->display();
             }
         }
@@ -313,7 +255,7 @@ int main(int argc, char* argv[]) {
 
     CellClass cell;
     cell.cleanCurrGen();
-    cell.drawGrid();
+    cell.CreateGrid();
     cell.run(&window);
     
     getchar();
