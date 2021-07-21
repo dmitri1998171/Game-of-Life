@@ -13,9 +13,7 @@
 enum GAME_STATES {
     START_STATE = 0,
     PAUSE_STATE = 1,
-    PLAY_STATE,
-    WIN_STATE,
-    FAIL_STATE
+    PLAY_STATE = 2
 };
 
 using namespace std;
@@ -29,7 +27,6 @@ class CellClass {
         static const int gridStep = WINDOW_SIZE / rectSize;
         char prevGen[gridStep][gridStep];
         char currGen[gridStep][gridStep];
-        char preprevGen[gridStep][gridStep];
         RectangleShape cell[gridStep][gridStep];
         Color liveCellColor = Color::Red;
         Color deathCellColor = Color::White;
@@ -87,7 +84,6 @@ class CellClass {
         void nextGen() {
             for(int i = 0; i < gridStep; i++) {
                 for(int j = 0; j < gridStep; j++) {
-                    preprevGen[i][j] = prevGen[i][j];
                     prevGen[i][j] = currGen[i][j];
                 }
             }
@@ -184,6 +180,9 @@ class CellClass {
             addText(&info_text, &font, &infoText, Color(textColor, textColor, textColor), fontSize);
             addText(&rules_text, &font, &rulesText, Color(textColor, textColor, textColor), fontSize * 0.75);
 
+            cleanCurrGen();
+            CreateGrid();
+
             while(true) {
                 Event event;
                 while (window->pollEvent(event)) {
@@ -192,21 +191,21 @@ class CellClass {
                         exit(0);
                     }
 
-                    if (event.type == sf::Event::KeyPressed) {
-                        if (event.key.code == sf::Keyboard::I) {
+                    if (event.type == Event::KeyPressed) {
+                        if (event.key.code == Keyboard::I) {
                             infoTextState = 1;
                         }
-                        if (event.key.code == sf::Keyboard::H) {
+                        if (event.key.code == Keyboard::H) {
                             rulesTextState = 1;
                         }
-                        if (event.key.code == sf::Keyboard::C) {
+                        if (event.key.code == Keyboard::C) {
                             if(playState == PLAY_STATE || playState == PAUSE_STATE) {
                                 playState = START_STATE;
                                 startCount = 0;
                             }
                         }
-                        if (event.key.code == sf::Keyboard::Enter) playState = PLAY_STATE;
-                        if (event.key.code == sf::Keyboard::Space) playState = PAUSE_STATE;
+                        if (event.key.code == Keyboard::Enter) playState = PLAY_STATE;
+                        if (event.key.code == Keyboard::Space) playState = PAUSE_STATE;
                     }
                 }
 
@@ -255,8 +254,6 @@ int main(int argc, char* argv[]) {
     RenderWindow window(VideoMode(WINDOW_SIZE, WINDOW_SIZE), "Game of Life");
 
     CellClass cell;
-    cell.cleanCurrGen();
-    cell.CreateGrid();
     cell.run(&window);
     
     getchar();
