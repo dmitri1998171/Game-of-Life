@@ -67,9 +67,10 @@ class CellClass {
             }
         }
 
-        void addText(Text *text, Font *font, string *str, Color color) {
+        void addText(Text *text, Font *font, string *str, Color color, int fontSize) {
             text->setFont(*font);
             text->setFillColor(color);
+            text->setCharacterSize(fontSize);
             text->setString(*str);
         }
 
@@ -133,7 +134,7 @@ class CellClass {
             }
         }
 
-    // ===============================================
+    // ==== Other metods =============================
 
         int timer(float seconds) {
             Time elapsed1;
@@ -165,14 +166,14 @@ class CellClass {
                     window->draw(cell[i][j]);
         }
 
+    // ===============================================
+
         void run(RenderWindow* window) {
             int startCount = 0;
             int fontSize = 24;
             int textColor = 75;
             int infoTextState = 1, rulesTextState = 0;
-            string rulesText;
-            string infoText;
-
+            string infoText, rulesText;
             Text info_text, rules_text;
             Font font;
             font.loadFromFile("./CyrilicOld.TTF");
@@ -180,8 +181,8 @@ class CellClass {
             loadTextFromFile("info.txt", &infoText);
             loadTextFromFile("rules.txt", &rulesText);
 
-            addText(&info_text, &font, &infoText, Color(textColor, textColor, textColor));
-            addText(&rules_text, &font, &rulesText, Color(textColor, textColor, textColor));
+            addText(&info_text, &font, &infoText, Color(textColor, textColor, textColor), fontSize);
+            addText(&rules_text, &font, &rulesText, Color(textColor, textColor, textColor), fontSize * 0.75);
 
             while(true) {
                 Event event;
@@ -233,7 +234,7 @@ class CellClass {
                         if(rulesTextState) {
                             window->draw(rules_text);
 
-                            if(timer(10))
+                            if(timer(30))
                                 rulesTextState = 0;
                         }
                         break;
