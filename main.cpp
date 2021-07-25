@@ -37,7 +37,7 @@ class CellClass {
 
     // ==== SFML methods =============================
        
-        void CreateGrid() {
+        void createGrid() {
             for(int i = 0; i < gridStep; i++) {
                 for(int j = 0; j < gridStep; j++) {
                     cell[i][j].setSize(Vector2f(rectSize, rectSize));
@@ -62,6 +62,14 @@ class CellClass {
                             }
                 }
             }
+        }
+
+        /* w, h - number of cells */
+        void addTextRect(RectangleShape *rect, int w, int h) {
+            rect->setSize(Vector2f(w * 16, h * 16));
+            rect->setFillColor(Color::White);
+            rect->setOutlineThickness(1);
+            rect->setOutlineColor(Color::Black);
         }
 
         void addText(Text *text, Font *font, string *str, Color color, int fontSize) {
@@ -170,6 +178,7 @@ class CellClass {
             int textColor = 75;
             int infoTextState = 1, rulesTextState = 0;
             string infoText, rulesText;
+            RectangleShape infoTextRect, rulesTextRect;
             Text info_text, rules_text;
             Font font;
             font.loadFromFile("./CyrilicOld.TTF");
@@ -177,11 +186,13 @@ class CellClass {
             loadTextFromFile("info.txt", &infoText);
             loadTextFromFile("rules.txt", &rulesText);
 
+            addTextRect(&infoTextRect, 10, 8);
             addText(&info_text, &font, &infoText, Color(textColor, textColor, textColor), fontSize);
+            addTextRect(&rulesTextRect, 40, 28);
             addText(&rules_text, &font, &rulesText, Color(textColor, textColor, textColor), fontSize * 0.75);
 
             cleanCurrGen();
-            CreateGrid();
+            createGrid();
 
             while(true) {
                 Event event;
@@ -192,20 +203,16 @@ class CellClass {
                     }
 
                     if (event.type == Event::KeyPressed) {
-                        if (event.key.code == Keyboard::I) {
-                            infoTextState = 1;
-                        }
-                        if (event.key.code == Keyboard::H) {
-                            rulesTextState = 1;
-                        }
                         if (event.key.code == Keyboard::C) {
                             if(playState == PLAY_STATE || playState == PAUSE_STATE) {
                                 playState = START_STATE;
                                 startCount = 0;
                             }
                         }
-                        if (event.key.code == Keyboard::Enter) playState = PLAY_STATE;
+                        if (event.key.code == Keyboard::I) infoTextState++;
+                        if (event.key.code == Keyboard::H) rulesTextState++;
                         if (event.key.code == Keyboard::Space) playState = PAUSE_STATE;
+                        if (event.key.code == Keyboard::Enter) playState = PLAY_STATE;
                     }
                 }
 
@@ -219,22 +226,21 @@ class CellClass {
                             cleanCurrGen();
                             startCount++;
                         }
-
+                        
                         drawFirstGen(window);
                         
                     case PAUSE_STATE:
+                        if(infoTextState > 1) infoTextState = 0;
+                        if(rulesTextState > 1) rulesTextState = 0;
+                        
                         if(infoTextState) {
+                            window->draw(infoTextRect);
                             window->draw(info_text);
-
-                            if(timer(5))
-                                infoTextState = 0;
                         }
 
                         if(rulesTextState) {
+                            window->draw(rulesTextRect);
                             window->draw(rules_text);
-
-                            if(timer(30))
-                                rulesTextState = 0;
                         }
                         break;
 
